@@ -1,25 +1,33 @@
-var builder = require('botbuilder');
-var restify = require('restify');
-var Store   = require('./store');
+"use strict";
+var builder = require("botbuilder");
+var botbuilder_azure = require("botbuilder-azure");
 
-//MS Bot App PW: vRvYYE8uU5dxpaf7AvnNLbe
+var useEmulator = (process.env.NODE_ENV == 'development');
 
-// Setup Restify Server
-var server = restify.createServer();
-server.listen(process.env.port || process.env.PORT || 3978, function () {
-   console.log('%s listening to %s', server.name, server.url); 
-});
+var Store = require('./store');
 
 // Create connector and listen for messages
-var connector = new builder.ChatConnector({
-    appId: process.env.MicrosoftAppId,
-    appPassword: process.env.MicrosoftAppPassword 
+var connector = useEmulator ? new builder.ChatConnector() : new botbuilder_azure.BotServiceConnector({
+    appId: process.env['MicrosoftAppId'],
+    appPassword: process.env['MicrosoftAppPassword'],
+    stateEndpoint: process.env['BotStateEndpoint'],
+    openIdMetadata: process.env['BotOpenIdMetadata']
 });
-server.post('/api/messages', connector.listen());
 
 var bot = new builder.UniversalBot(connector, function (session) {
     session.send('Sorry, I did not understand. Type \'help\' if you need assistance.');
 });
+
+if (useEmulator) {
+    var restify = require('restify');
+    var server = restify.createServer();
+    server.listen(3978, function() {
+        console.log('test bot endpont at http://localhost:3978/api/messages');
+    });
+    server.post('/api/messages', connector.listen());    
+} else {
+    module.exports = { default: connector.listen() }
+}
 
 var model = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/28c9dce1-9bb9-4f3c-8fc5-63a33ff00938?subscription-key=bb704119e2874d68885155a582262ec0&timezoneOffset=0.0&verbose=true&q=';
 var recognizer = new builder.LuisRecognizer(model);
