@@ -15,6 +15,7 @@ var connector = useEmulator ? new builder.ChatConnector() : new botbuilder_azure
 });
 
 var bot = new builder.UniversalBot(connector, function (session) {
+    session.sendTyping();
     session.send('Sorry, I did not understand. Type \'help\' if you need assistance.');
 });
 
@@ -35,7 +36,8 @@ bot.recognizer(recognizer);
 
 bot.dialog('LookupUrl', [
     function (session, args, next) {
-        //session.send('Welcome to the Url Explorer! We are analyzing your message: \'%s\'', session.message.text);
+        session.send('Welcome to the Url Explorer! We are analyzing your message: \'%s\'', session.message.text);
+        session.sendTyping();
 
         // try extracting entities
         var url = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.url');
